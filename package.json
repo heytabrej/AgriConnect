@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@aws-sdk/s3-request-presigner": "^3.758.0",
+    "@aws-sdk/s3-request-presigner": "^3.995.0",
     "@heroicons/react": "^2.2.0",
     "@iconify/react": "^5.2.0",
     "@mantine/core": "^7.17.1",
