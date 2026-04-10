@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 
-export default function GeminiChatbot() {
+export default function AIChatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -16,7 +16,6 @@ export default function GeminiChatbot() {
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude } = pos.coords;
-        // Use OpenWeather API or similar to get area name
         const res = await fetch(
           `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}`
         );
@@ -33,7 +32,6 @@ export default function GeminiChatbot() {
     setMessages([...messages, { role: "user", content: input }]);
     setInput("");
     try {
-      const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
       const prompt = `
 You are AgriConnect's AI assistant. Respond in markdown with double asterisks for headings and bold text. Limit your answer to 100-150 words.
 User location: ${location || "Not provided"}.
@@ -41,21 +39,23 @@ If user asks about crops or soil, use relevant context.
 User query: "${input}"
 Always cite your sources (public datasets, government portals, etc.) and explain your reasoning for reliability.
       `;
-      const res = await fetch(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-goog-api-key": geminiApiKey
-          },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        }
-      );
-      const data = await res.json();
-      const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
+
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get response.");
+      }
+
+      const answer = data.result || "No response.";
       setMessages((msgs) => [...msgs, { role: "bot", content: answer }]);
     } catch (err) {
+      console.error("Chat API Error:", err);
       setMessages((msgs) => [...msgs, { role: "bot", content: "Error fetching response. Please check your internet connection or try again later." }]);
     }
     setLoading(false);

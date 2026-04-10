@@ -1,5 +1,5 @@
 import './globals.css';
-import GeminiChatbot from "./components/GeminiChatbot";
+import AIChatbot from "./components/GeminiChatbot";
 
 
 export const metadata = {
@@ -12,7 +12,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="bg-gray-50 text-gray-800 antialiased">
         {children}
-        <GeminiChatbot />
+        <AIChatbot />
       </body>
     </html>
   );

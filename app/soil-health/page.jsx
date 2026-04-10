@@ -18,11 +18,6 @@ const SoilHealthPage = () => {
     setAnalysis(null);
 
     try {
-      const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      if (!geminiApiKey) {
-        throw new Error("Gemini API key is not configured.");
-      }
-
       const prompt = `
         You are an expert agricultural scientist and plant pathologist. A farmer has provided the following information about a crop issue. Analyze the data and provide a detailed report.
 
@@ -46,34 +41,26 @@ const SoilHealthPage = () => {
         Format your response using clear headings with Markdown (**Bold** for headings, bullet points for lists).
       `;
 
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+      const response = await fetch('/api/soil-analysis', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-goog-api-key': geminiApiKey
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
       });
 
-      if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(errorBody.error?.message || 'Failed to get AI analysis.');
-      }
-
       const data = await response.json();
-      const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
-      if (!resultText) {
-        throw new Error("Received an empty response from the AI.");
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get analysis.');
       }
 
-      setAnalysis(resultText);
+      if (!data.result) {
+        throw new Error('Received an empty response from the AI.');
+      }
 
+      setAnalysis(data.result);
     } catch (err) {
       console.error("Soil Health Analysis Error:", err);
-      setError(err.message);
+      setError(err?.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }

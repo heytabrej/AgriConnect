@@ -63,13 +63,12 @@ const WeatherPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchGeminiRecommendations = async (location, forecast) => {
+  const fetchAIRecommendations = async (location, forecast) => {
     try {
-      const geminiApiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setMonth(startDate.getMonth() + 3);
-      const dateRange = `${startDate.toLocaleDateString()} to ${endDate.toLocaleDateString()}`;
+      const today = new Date();
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 7);
+      const dateRange = `${today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
       
       const prompt = `
 You are an expert agronomist and AI advisor for Indian farmers.
@@ -89,23 +88,21 @@ Requirements:
 Weather data: ${JSON.stringify(forecast)}
 `;
 
-      const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent', {
+      const response = await fetch('/api/weather-recommendations', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-goog-api-key': geminiApiKey
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }]
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
       });
-      const result = await response.json();
-      if (result.candidates && result.candidates.length > 0) {
-        return result.candidates[0].content.parts[0].text;
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to get recommendation from AI.");
       }
-      throw new Error("Failed to get recommendation from AI.");
+
+      return data.result || "Could not load AI recommendations at this time.";
     } catch (err) {
-      console.error("Error fetching Gemini recommendations:", err);
+      console.error("Error fetching AI recommendations:", err);
       return "Could not load AI recommendations at this time.";
     }
   };
@@ -149,16 +146,17 @@ Weather data: ${JSON.stringify(forecast)}
         };
       });
 
-      const geminiRecommendation = await fetchGeminiRecommendations(location, dailyForecast);
+      const aiRecommendation = await fetchAIRecommendations(location, dailyForecast);
 
       setWeatherData({
         city: data.city.name,
         country: data.city.country,
         forecast: dailyForecast,
-        recommendations: geminiRecommendation
+        recommendations: aiRecommendation
       });
+
     } catch (err) {
-      setError(err.message || 'Failed to fetch weather data');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
